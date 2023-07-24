@@ -26,15 +26,31 @@ function Convert-DateFormat {
             continue
         }
     }
-
-$originalDate = $args[0]
-$convertedDate = Convert-DateFormat -Date $originalDate
-Write-Host "Converted date: $convertedDate"
-
-Set-Clipboard -Value ($convertedDate)
-
-$windowTitle = "Completed"
-[Console]::Title = $windowTitle
-
 }
 
+this 
+function getkeyvals {
+    param (
+        [string]$filePath,
+        [string]$targetKey,
+        [string]$targetValue
+    )
+
+    # Read JSON data from the specified file
+    $jsonData = Get-Content -Path $filePath -Raw
+
+    # Convert JSON data to a PowerShell object
+    $array = $jsonData | ConvertFrom-Json
+
+    # Filter the objects based on the target key-value pair and return the corresponding array
+    $resultArray = @()
+
+    foreach ($item in $array) {
+        if ($item.$targetKey -eq $targetValue) {
+            $resultArray = $item.SummaryFields
+            break
+        }
+    }
+
+    return $resultArray
+}
