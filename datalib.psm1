@@ -28,29 +28,40 @@ function Convert-DateFormat {
     }
 }
 
-this 
-function getkeyvals {
+function Get-Keyvals {
     param (
         [string]$filePath,
-        [string]$targetKey,
-        [string]$targetValue
+        [string]$targetKey
     )
 
     # Read JSON data from the specified file
     $jsonData = Get-Content -Path $filePath -Raw
 
     # Convert JSON data to a PowerShell object
-    $array = $jsonData | ConvertFrom-Json
+    $data = $jsonData | ConvertFrom-Json
 
-    # Filter the objects based on the target key-value pair and return the corresponding array
+    # Initialize an empty array to store the found values
     $resultArray = @()
 
-    foreach ($item in $array) {
-        if ($item.$targetKey -eq $targetValue) {
-            $resultArray = $item.SummaryFields
-            break
+    # Recursive function to search through the JSON data
+    function SearchData($item) {
+        if ($item -is [array]) {
+            foreach ($element in $item) {
+                SearchData $element
+            }
+        } elseif ($item -is [hashtable]) {
+            foreach ($key in $item.Keys) {
+                if ($key -eq $targetKey) {
+                    $resultArray += $item.$key
+                } else {
+                    SearchData $item.$key
+                }
+            }
         }
     }
+
+    # Start searching through the JSON data
+    SearchData $data
 
     return $resultArray
 }
