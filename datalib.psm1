@@ -28,40 +28,44 @@ function Convert-DateFormat {
     }
 }
 
-function Get-Keyvals {
+function Get-ArrayVals {
     param (
-        [string]$filePath,
-        [string]$targetKey
+        [Parameter(Mandatory = $true)]
+        [string]$path,
+        [Parameter(Mandatory = $true)]
+        [string]$targetvalue,
+        [Parameter(Mandatory = $false)]
+        [string]$targetdata
     )
-
-    # Read JSON data from the specified file
-    $jsonData = Get-Content -Path $filePath -Raw
-
-    # Convert JSON data to a PowerShell object
-    $data = $jsonData | ConvertFrom-Json
-
-    # Initialize an empty array to store the found values
-    $resultArray = @()
-
-    # Recursive function to search through the JSON data
-    function SearchData($item) {
-        if ($item -is [array]) {
-            foreach ($element in $item) {
-                SearchData $element
-            }
-        } elseif ($item -is [hashtable]) {
-            foreach ($key in $item.Keys) {
-                if ($key -eq $targetKey) {
-                    $resultArray += $item.$key
-                } else {
-                    SearchData $item.$key
+  
+    # Convert the JSON string to PowerShell objects
+    $jsonArray = Get-Content -Path $path -Raw
+    $jsonObjects = ConvertFrom-Json $jsonArray
+  
+    # Define a function to search for the target key recursively
+    function Get-ValueRecursively ($obj) {
+        $result = @()
+        foreach ($property in $obj.PSObject.Properties) {
+            if ($property.Value -is [System.Array]) {
+                # If the value is an array object, search for the target key recursively
+                foreach ($item in $property.Value) {
+                    $result += Get-ValueRecursively $item
                 }
             }
+             elseif ($property.Name -eq "Type" -and $property.Value -eq $targetvalue) {
+                # If the key is "Type" and value is "INVOICE_RECEIPT_ID", extract the "Value"
+                $result += $obj.Value
+            }
         }
+        return $result
     }
-
-    # Start searching through the JSON data
-    SearchData $data
-
-    return $resultArray
-}
+  
+    # Loop through each object in the array and extract the data with "Type": "INVOICE_RECEIPT_ID"
+    $invoiceReceiptIDs = @()
+    foreach ($obj in $jsonObjects) {
+        $invoiceReceiptIDs += Get-ValueRecursively $obj
+    }
+  
+    # Output the extracted INVOICE_RECEIPT_ID values
+    return $invoiceReceiptIDs
+  }
