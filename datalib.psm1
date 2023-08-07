@@ -74,5 +74,5 @@ function Get-Array_Vals{
   
     # Output the extracted values
     return $extracted
-  }
+}
   
