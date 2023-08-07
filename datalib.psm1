@@ -79,12 +79,12 @@ function Get-Array_Vals{
     }
   
     # Loop through each object in the array and extract the data
-    $invoiceReceiptIDs = @()
+    $extracteddara = @()
     foreach ($obj in $jsonObjects) {
-        $invoiceReceiptIDs += Get-ValueRecursively $obj
+        $extracteddara += Get-ValueRecursively $obj
     }
   
     # Output the extracted values
-    return $invoiceReceiptIDs
+    return $extracteddara
   }
   
