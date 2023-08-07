@@ -28,7 +28,7 @@ function Convert-DateFormat {
     }
 }
 
-function Get-ArrayVals {
+function Get-Array_Vals{
     param (
         [Parameter(Mandatory = $true)]
         [string]$path,
@@ -38,34 +38,53 @@ function Get-ArrayVals {
         [string]$targetdata
     )
   
-    # Convert the JSON string to PowerShell objects
+    # exctact json formatted array from file & Convert the JSON string to PowerShell objects
     $jsonArray = Get-Content -Path $path -Raw
     $jsonObjects = ConvertFrom-Json $jsonArray
   
-    # Define a function to search for the target key recursively
+    # function to search for the target key's value recursively
     function Get-ValueRecursively ($obj) {
-        $result = @()
+      $result = @()
+      if($targetdata){
+        #if targetdata specified
         foreach ($property in $obj.PSObject.Properties) {
             if ($property.Value -is [System.Array]) {
-                # If the value is an array object, search for the target key recursively
+                # If the value is an Array object use recursive function with item as input
                 foreach ($item in $property.Value) {
                     $result += Get-ValueRecursively $item
                 }
             }
-             elseif ($property.Name -eq "Type" -and $property.Value -eq $targetvalue) {
-                # If the key is "Type" and value is "INVOICE_RECEIPT_ID", extract the "Value"
-                $result += $obj.Value
+             elseif ($property.Value -eq $targetvalue) {
+                # If the value is "$targetvalue", extract the value assigned to defined parameter "$targetvalue"
+                $result += $obj.$targetdata
             }
         }
         return $result
+      }
+      else{
+        #if targetdata not specified
+        foreach ($property in $obj.PSObject.Properties) {
+            if ($property.Value -is [System.Array]) {
+                foreach ($item in $property.Value) {
+                    $result += Get-ValueRecursively $item
+                }
+            }
+             elseif ($property.Value -eq $targetvalue) {
+                # If the value is "$targetvalue", extract the whole object
+                $result += $obj
+            }
+        }
+        return $result
+      }
     }
   
-    # Loop through each object in the array and extract the data with "Type": "INVOICE_RECEIPT_ID"
+    # Loop through each object in the array and extract the data
     $invoiceReceiptIDs = @()
     foreach ($obj in $jsonObjects) {
         $invoiceReceiptIDs += Get-ValueRecursively $obj
     }
   
-    # Output the extracted INVOICE_RECEIPT_ID values
+    # Output the extracted values
     return $invoiceReceiptIDs
   }
+  
