@@ -37,15 +37,12 @@ function Get-Array_Vals{
         [Parameter(Mandatory = $false)]
         [string]$targetdata
     )
-  
     # exctact json formatted array from file & Convert the JSON string to PowerShell objects
     $jsonArray = Get-Content -Path $path -Raw
     $jsonObjects = ConvertFrom-Json $jsonArray
-  
     # function to search for the target key's value recursively
     function Get-ValueRecursively ($obj) {
       $result = @()
-      if($targetdata){
         #if targetdata specified
         foreach ($property in $obj.PSObject.Properties) {
             if ($property.Value -is [System.Array]) {
@@ -54,37 +51,28 @@ function Get-Array_Vals{
                     $result += Get-ValueRecursively $item
                 }
             }
-             elseif ($property.Value -eq $targetvalue) {
-                # If the value is "$targetvalue", extract the value assigned to defined parameter "$targetvalue"
-                $result += $obj.$targetdata
-            }
-        }
-        return $result
-      }
-      else{
-        #if targetdata not specified
-        foreach ($property in $obj.PSObject.Properties) {
-            if ($property.Value -is [System.Array]) {
-                foreach ($item in $property.Value) {
-                    $result += Get-ValueRecursively $item
+            elseif ($property.Value -eq $targetvalue) {
+                # If the value is "$targetvalue", extract the whole object
+                if($targetdata){
+                    # If the value is "$targetvalue", extract the value assigned to defined parameter "$targetvalue"
+                    $result += $obj.$targetdata
+                }
+                else{
+                    #if targetdata not specified
+                    $result += $obj
                 }
             }
-             elseif ($property.Value -eq $targetvalue) {
-                # If the value is "$targetvalue", extract the whole object
-                $result += $obj
-            }
         }
         return $result
-      }
     }
   
     # Loop through each object in the array and extract the data
-    $extracteddara = @()
+    $extracted = @()
     foreach ($obj in $jsonObjects) {
-        $extracteddara += Get-ValueRecursively $obj
+        $extracted += Get-ValueRecursively $obj
     }
   
     # Output the extracted values
-    return $extracteddara
+    return $extracted
   }
   
